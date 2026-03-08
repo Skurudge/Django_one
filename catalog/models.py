@@ -33,7 +33,6 @@ class Product(models.Model):
     created_at = models.DateField(verbose_name="Дата создания")
     updated_at = models.DateField(verbose_name="Дата последнего изменения")
 
-
     def __str__(self):
         return f"продукт '{self.name}' из категории '{self.category}'"
 

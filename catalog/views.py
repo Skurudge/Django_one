@@ -4,7 +4,7 @@ from catalog.models import Product
 
 
 def home(request):
-    latest_products = Product.objects.order_by('-created_at')[:5]
+    latest_products = Product.objects.order_by("-created_at")[:5]
     for product in latest_products:
         print(f"Продукт: {product.name}, создан: {product.created_at}")
 
