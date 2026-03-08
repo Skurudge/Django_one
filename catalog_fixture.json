@@ -1,0 +1,57 @@
+[
+{
+    "model": "catalog.category",
+    "pk": 1,
+    "fields": {
+        "name": "ручки",
+        "description": "различные шариковые ручки"
+    }
+},
+{
+    "model": "catalog.category",
+    "pk": 2,
+    "fields": {
+        "name": "карандаши",
+        "description": "различные грифельные карандаши"
+    }
+},
+{
+    "model": "catalog.product",
+    "pk": 1,
+    "fields": {
+        "name": "красная ручка",
+        "description": "красная шариковая ручка",
+        "image": "",
+        "category": 1,
+        "price": "32.20",
+        "created_at": "2026-02-12",
+        "updated_at": "2026-02-15"
+    }
+},
+{
+    "model": "catalog.product",
+    "pk": 5,
+    "fields": {
+        "name": "черный карандаш",
+        "description": "черный кохинор",
+        "image": "",
+        "category": 2,
+        "price": "35.00",
+        "created_at": "2026-03-02",
+        "updated_at": "2026-03-02"
+    }
+},
+{
+    "model": "catalog.product",
+    "pk": 6,
+    "fields": {
+        "name": "черная ручка",
+        "description": "различные шариковые ручки",
+        "image": "",
+        "category": 1,
+        "price": "500.00",
+        "created_at": "2026-01-13",
+        "updated_at": "2026-03-03"
+    }
+}
+]
