@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card mt-4 box-shadow">
+    <div class="card-header">
+        <h2>{{ product.name }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                {% if product.image %}
+                    <img src="/{{ product.image.name }}" class="img-fluid rounded shadow-sm">
+                {% else %}
+                    <div class="bg-light py-5 text-center text-muted border rounded">Нет изображения</div>
+                {% endif %}
+            </div>
+            <div class="col-md-8 d-flex flex-column">
+                <h4 class="text-muted mb-3">Категория: {{ product.category.name|default:"Без категории" }}</h4>
+                <h2 class="text-primary mb-4">${{ product.price }}</h2>
+                <div class="mb-4">
+                    <h5>Описание товара:</h5>
+                    <p class="lead text-start" style="white-space: pre-wrap;">{{ product.description }}</p>
+                </div>
+                <hr class="mt-auto">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted"><small>Добавлен: {{ product.created_at }}</small></span>
+                    <!-- Кнопка возврата обратно в каталог -->
+                    <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary">Назад в каталог</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
