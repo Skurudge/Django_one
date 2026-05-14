@@ -1,17 +1,19 @@
 from django.core.management.base import BaseCommand
 from catalog.models import Category, Product
 
-
 class Command(BaseCommand):
     help = "Кастомная команда для добавления тестовых продуктов."
 
     def handle(self, *args, **kwargs):
+        # Полная очистка таблиц перед наполнением
         Product.objects.all().delete()
         Category.objects.all().delete()
 
+        # Создание тестовых категорий
         category1, _ = Category.objects.get_or_create(name="ручки", description="различные пишущие ручки")
         category2, _ = Category.objects.get_or_create(name="карандаши", description="грифельные карандаши")
 
+        # Список тестовых продуктов
         products = [
             {
                 "name": "красная ручка",
@@ -55,6 +57,7 @@ class Command(BaseCommand):
             },
         ]
 
+        # Сохранение продуктов в базу данных
         for product_data in products:
             product, created = Product.objects.get_or_create(**product_data)
             if created:
