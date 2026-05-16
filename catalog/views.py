@@ -1,75 +1,93 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponse
-from django.core.paginator import Paginator
+from django.views.generic import ListView, DetailView, CreateView, TemplateView, View
 from catalog.models import Product, Category
 from datetime import date
 
 
-def home(request):
-    # Лаконичный запрос ко всем продуктам согласно чек-листу
-    products_list = Product.objects.all()
+class ProductListView(ListView):
+    """CBV для главной страницы со списком товаров и пагинацией."""
+    model = Product
+    template_name = "home.html"
+    context_object_name = "page_obj"
+    paginate_by = 6
 
-    # Постраничный вывод: по 6 товаров на страницу
-    paginator = Paginator(products_list, 6)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    def get_queryset(self):
+        # Лаконичный запрос ко всем продуктам согласно чек-листу
+        queryset = super().get_queryset()
 
-    # Сохраняем вашу оригинальную логику вывода в консоль
-    for product in page_obj:
-        print(f"Продукт: {product.name}, создан: {product.created_at}")
+        # Сохраняем вашу оригинальную логику вывода в консоль
+        for product in queryset:
+            print(f"Продукт: {product.name}, создан: {product.created_at}")
 
-    context = {"page_obj": page_obj}
-    return render(request, "home.html", context)
-
-
-def contacts(request):
-    return render(request, "contacts.html")
+        return queryset
 
 
-def my_contact(request):
-    if request.method == "POST":
-        name = request.POST.get("name")
-        phone = request.POST.get("phone")
-        message = request.POST.get("message")
-        return HttpResponse(f"Спасибо, {name}! Ваше сообщение {message} и телефон {phone} получены.")
-    return render(request, "contacts.html")
+class ProductDetailView(DetailView):
+    """CBV для детальной страницы товара."""
+    model = Product
+    template_name = "product_detail.html"
+    context_object_name = "product"
 
 
-def product_detail(request, pk):
-    # Извлечение объекта через ORM по pk согласно чек-листу
-    product = get_object_or_404(Product, pk=pk)
-    return render(request, "product_detail.html", {"product": product})
+class ProductCreateView(CreateView):
+    """CBV для создания нового товара с ручной валидацией полей."""
+    model = Product
+    template_name = "add_product.html"
+    fields = ["name", "description", "price", "category", "image"]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["categories"] = Category.objects.all()
+        context["errors"] = {}
+        return context
 
-def add_product(request):
-    categories = Category.objects.all()
-    errors = {}
-
-    if request.method == "POST":
+    def post(self, request, *args, **kwargs):
         name = request.POST.get("name", "").strip()
         description = request.POST.get("description", "").strip()
         price = request.POST.get("price", "").strip()
         category_id = request.POST.get("category", "").strip()
         image = request.FILES.get("image")
 
-        # Валидация: обязательные поля и защита от ошибок
+        errors = {}
         if not name: errors["name"] = "Название обязательно"
         if not description: errors["description"] = "Описание обязательно"
         if not price: errors["price"] = "Цена обязательна"
 
-        if not errors:
-            category = Category.objects.get(pk=category_id) if category_id else None
-
-            # Сохранение нового товара в базу данных
-            Product.objects.create(
-                name=name,
-                description=description,
-                price=price,
-                category=category,
-                image=image,
-                created_at=date.today(),
-                updated_at=date.today()
+        if errors:
+            return self.render_to_response(
+                self.get_context_data(errors=errors, categories=Category.objects.all())
             )
-            return redirect("catalog:home")
 
-    return render(request, "add_product.html", {"categories": categories, "errors": errors})
+        category = Category.objects.get(pk=category_id) if category_id else None
+
+        Product.objects.create(
+            name=name,
+            description=description,
+            price=price,
+            category=category,
+            image=image,
+            created_at=date.today(),
+            updated_at=date.today()
+        )
+        return redirect("catalog:home")
+
+
+class ContactsTemplateView(TemplateView):
+    """CBV для отображения статической информации на странице контактов."""
+    template_name = "contacts.html"
+
+
+class MyContactView(View):
+    """CBV для обработки POST-запроса формы обратной связи."""
+
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get("name")
+        phone = request.POST.get("phone")
+        message = request.POST.get("message")
+        return HttpResponse(f"Спасибо, {name}! Ваше сообщение {message} и телефон {phone} получены.")
+
+    def get(self, request, *args, **kwargs):
+        # Если случайно зашли GET-запросом, перенаправляем на информационную страницу
+        return redirect("catalog:contacts")
+
