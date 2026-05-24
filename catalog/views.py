@@ -2,12 +2,13 @@ from django.shortcuts import redirect
 from django.http import HttpResponse
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
+from django.contrib.auth.mixins import LoginRequiredMixin
 from catalog.models import Product, Category
 from catalog.forms import ProductForm
 
 
 class ProductListView(ListView):
-    """CBV для главной страницы со списком товаров и пагинацией."""
+    """CBV для главной страницы со списком товаров и пагинацией (доступна всем)."""
     model = Product
     template_name = "home.html"
     context_object_name = "page_obj"
@@ -21,15 +22,15 @@ class ProductListView(ListView):
         return queryset
 
 
-class ProductDetailView(DetailView):
-    """CBV для детальной страницы товара."""
+class ProductDetailView(LoginRequiredMixin, DetailView):
+    """CBV для детальной страницы товара (только для авторизованных)."""
     model = Product
     template_name = "product_detail.html"
     context_object_name = "product"
 
 
-class ProductCreateView(CreateView):
-    """CBV для создания нового товара с использованием ProductForm."""
+class ProductCreateView(LoginRequiredMixin, CreateView):
+    """CBV для создания нового товара с использованием ProductForm (только для авторизованных)."""
     model = Product
     form_class = ProductForm
     template_name = "add_product.html"
@@ -45,8 +46,8 @@ class ProductCreateView(CreateView):
         return super().form_valid(form)
 
 
-class ProductUpdateView(UpdateView):
-    """CBV для редактирования существующего товара с использованием ProductForm."""
+class ProductUpdateView(LoginRequiredMixin, UpdateView):
+    """CBV для редактирования существующего товара с использованием ProductForm (только для авторизованных)."""
     model = Product
     form_class = ProductForm
     template_name = "add_product.html"
@@ -64,20 +65,20 @@ class ProductUpdateView(UpdateView):
         return super().form_valid(form)
 
 
-class ProductDeleteView(DeleteView):
-    """CBV для удаления товара с использованием собственного шаблона."""
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
+    """CBV для удаления товара с использованием собственного шаблона (только для авторизованных)."""
     model = Product
     template_name = "product_confirm_delete.html"
     success_url = reverse_lazy("catalog:home")
 
 
 class ContactsTemplateView(TemplateView):
-    """CBV для отображения статической информации на странице контактов."""
+    """CBV для отображения статической информации на странице контактов (доступна всем)."""
     template_name = "contacts.html"
 
 
 class MyContactView(View):
-    """CBV для обработки POST-запроса формы обратной связи."""
+    """CBV для обработки POST-запроса формы обратной связи (доступна всем)."""
     def post(self, request, *args, **kwargs):
         name = request.POST.get("name")
         phone = request.POST.get("phone")
