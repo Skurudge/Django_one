@@ -9,7 +9,7 @@
         <div class="row">
             <div class="col-md-4">
                 {% if product.image %}
-                    <img src="/{{ product.image.name }}" class="img-fluid rounded shadow-sm">
+                    <img src="{{ product.image.url }}" class="img-fluid rounded shadow-sm">
                 {% else %}
                     <div class="bg-light py-5 text-center text-muted border rounded">Нет изображения</div>
                 {% endif %}
@@ -24,11 +24,16 @@
                 <hr class="mt-auto">
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="text-muted"><small>Добавлен: {{ product.created_at }}</small></span>
-                    <!-- Кнопка возврата обратно в каталог -->
-                    <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary">Назад в каталог</a>
+
+                    <div class="btn-group gap-2">
+                        <a href="{% url 'catalog:product_update' product.pk %}" class="btn btn-warning">Редактировать</a>
+                        <a href="{% url 'catalog:product_delete' product.pk %}" class="btn btn-danger">Удалить</a>
+                        <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary">Назад в каталог</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+

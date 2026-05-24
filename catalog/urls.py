@@ -5,7 +5,9 @@ from catalog.views import (
     ContactsTemplateView,
     MyContactView,
     ProductDetailView,
-    ProductCreateView
+    ProductCreateView,
+    ProductUpdateView,
+    ProductDeleteView,
 )
 
 # Настройка пространства имен на основе конфигурации приложения
@@ -24,4 +26,10 @@ urlpatterns = [
 
     # Страница добавления нового товара (CBV)
     path("products/add/", ProductCreateView.as_view(), name="add_product"),
+
+    # Страница редактирования товара (CBV)
+    path("products/<int:pk>/update/", ProductUpdateView.as_view(), name="product_update"),
+
+    # Страница удаления товара (CBV)
+    path("products/<int:pk>/delete/", ProductDeleteView.as_view(), name="product_delete"),
 ]

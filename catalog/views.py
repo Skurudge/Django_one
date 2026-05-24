@@ -1,8 +1,9 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.http import HttpResponse
-from django.views.generic import ListView, DetailView, CreateView, TemplateView, View
+from django.urls import reverse_lazy, reverse
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 from catalog.models import Product, Category
-from datetime import date
+from catalog.forms import ProductForm
 
 
 class ProductListView(ListView):
@@ -13,13 +14,10 @@ class ProductListView(ListView):
     paginate_by = 6
 
     def get_queryset(self):
-        # Лаконичный запрос ко всем продуктам согласно чек-листу
         queryset = super().get_queryset()
-
         # Сохраняем вашу оригинальную логику вывода в консоль
         for product in queryset:
             print(f"Продукт: {product.name}, создан: {product.created_at}")
-
         return queryset
 
 
@@ -31,46 +29,46 @@ class ProductDetailView(DetailView):
 
 
 class ProductCreateView(CreateView):
-    """CBV для создания нового товара с ручной валидацией полей."""
+    """CBV для создания нового товара с использованием ProductForm."""
     model = Product
+    form_class = ProductForm
     template_name = "add_product.html"
-    fields = ["name", "description", "price", "category", "image"]
+    success_url = reverse_lazy("catalog:home")
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["categories"] = Category.objects.all()
-        context["errors"] = {}
-        return context
+    def form_valid(self, form):
+        """Автоматическое заполнение дат перед сохранением."""
+        from datetime import date
+        product = form.save(commit=False)
+        product.created_at = date.today()
+        product.updated_at = date.today()
+        product.save()
+        return super().form_valid(form)
 
-    def post(self, request, *args, **kwargs):
-        name = request.POST.get("name", "").strip()
-        description = request.POST.get("description", "").strip()
-        price = request.POST.get("price", "").strip()
-        category_id = request.POST.get("category", "").strip()
-        image = request.FILES.get("image")
 
-        errors = {}
-        if not name: errors["name"] = "Название обязательно"
-        if not description: errors["description"] = "Описание обязательно"
-        if not price: errors["price"] = "Цена обязательна"
+class ProductUpdateView(UpdateView):
+    """CBV для редактирования существующего товара с использованием ProductForm."""
+    model = Product
+    form_class = ProductForm
+    template_name = "add_product.html"
 
-        if errors:
-            return self.render_to_response(
-                self.get_context_data(errors=errors, categories=Category.objects.all())
-            )
+    def get_success_url(self):
+        """Перенаправление на страницу этого же товара после успешного редактирования."""
+        return reverse("catalog:product_detail", kwargs={"pk": self.object.pk})
 
-        category = Category.objects.get(pk=category_id) if category_id else None
+    def form_valid(self, form):
+        """Обновление даты изменения товара."""
+        from datetime import date
+        product = form.save(commit=False)
+        product.updated_at = date.today()
+        product.save()
+        return super().form_valid(form)
 
-        Product.objects.create(
-            name=name,
-            description=description,
-            price=price,
-            category=category,
-            image=image,
-            created_at=date.today(),
-            updated_at=date.today()
-        )
-        return redirect("catalog:home")
+
+class ProductDeleteView(DeleteView):
+    """CBV для удаления товара с использованием собственного шаблона."""
+    model = Product
+    template_name = "product_confirm_delete.html"
+    success_url = reverse_lazy("catalog:home")
 
 
 class ContactsTemplateView(TemplateView):
@@ -80,7 +78,6 @@ class ContactsTemplateView(TemplateView):
 
 class MyContactView(View):
     """CBV для обработки POST-запроса формы обратной связи."""
-
     def post(self, request, *args, **kwargs):
         name = request.POST.get("name")
         phone = request.POST.get("phone")
@@ -88,6 +85,4 @@ class MyContactView(View):
         return HttpResponse(f"Спасибо, {name}! Ваше сообщение {message} и телефон {phone} получены.")
 
     def get(self, request, *args, **kwargs):
-        # Если случайно зашли GET-запросом, перенаправляем на информационную страницу
         return redirect("catalog:contacts")
-
