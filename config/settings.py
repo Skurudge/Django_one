@@ -16,10 +16,12 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "django.contrib.sessions",  # Оставили только один раз
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "catalog",
+    "blog",
+    "users",  # Зарегистрировали новое приложение пользователей
 ]
 
 MIDDLEWARE = [
@@ -62,6 +64,9 @@ DATABASES = {
     }
 }
 
+# Указываем Django использовать нашу кастомную модель пользователя
+AUTH_USER_MODEL = "users.User"
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -92,3 +97,12 @@ STATICFILES_DIRS = (BASE_DIR / "static",)
 MEDIA_URL = "/media/"
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+# Настройки отправки почты (для приветственного письма при регистрации)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Перенаправление для LoginRequiredMixin на нашу кастомную страницу входа
+LOGIN_URL = "users:login"
+
+# Куда перенаправлять пользователя после успешного входа на сайт
+LOGIN_REDIRECT_URL = "catalog:home"
