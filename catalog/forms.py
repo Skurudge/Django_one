@@ -19,32 +19,35 @@ FORBIDDEN_WORDS = [
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ("name", "description", "image", "category", "price")
+        fields = ("name", "description", "image", "category", "price", "is_published")
 
     def __init__(self, *args, **kwargs):
         """Стилизация всех полей формы под Bootstrap."""
+        # Извлекаем кастомный флаг, переданный из контроллера
+        is_moderator = kwargs.pop("is_moderator", False)
         super().__init__(*args, **kwargs)
+
+        # Если пользователь не модератор/суперпользователь, скрываем поле публикации
+        if not is_moderator:
+            self.fields["is_published"].widget = forms.HiddenInput()
+            self.fields["is_published"].required = False
+
         for field_name, field in self.fields.items():
-            # Чекбокс отображается как элемент формы со своим Bootstrap-классом
             if isinstance(field.widget, forms.CheckboxInput):
                 field.widget.attrs["class"] = "form-check-input"
-            else:
+            elif not isinstance(field.widget, forms.HiddenInput):
                 field.widget.attrs["class"] = "form-control"
 
     def clean_name(self):
         """Валидация названия на отсутствие запрещенных слов и автоматическое приведение к нижнему регистру."""
         name = self.cleaned_data.get("name")
         if name:
-            # Принудительно переводим всё название в нижний регистр перед проверкой и сохранением
             name_lower = name.lower()
-
             for word in FORBIDDEN_WORDS:
                 if word in name_lower:
                     raise ValidationError(
                         f"Название товара не может содержать запрещенное слово: '{word}'."
                     )
-
-            # Возвращаем строку исключительно в нижнем регистре
             return name_lower
         return name
 
@@ -70,15 +73,13 @@ class ProductForm(forms.ModelForm):
         return price
 
     def clean_image(self):
-        """Дополнительное задание: Валидация формата (JPEG/PNG) и размера изображения (до 5 МБ)."""
+        """Валидация формата (JPEG/PNG) и размера изображения (до 5 МБ)."""
         image = self.cleaned_data.get("image")
         if image:
-            # Проверка размера файла (5 МБ = 5 * 1024 * 1024 байт)
             max_size = 5 * 1024 * 1024
             if image.size > max_size:
                 raise ValidationError("Размер изображения не должен превышать 5 МБ.")
 
-            # Проверка расширения / формата файла
             valid_extensions = ["image/jpeg", "image/png", "image/jpg"]
             content_type = getattr(image, "content_type", "")
             if content_type not in valid_extensions:
