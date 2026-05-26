@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+    <h1 class="display-4">Категория: {{ category.name }}</h1>
+    <p class="lead">{{ category.description }}</p>
+    <a href="{% url 'catalog:home' %}" class="btn btn-outline-secondary mt-2">Назад в полный каталог</a>
+</div>
+
+<div class="row text-center">
+    {% for product in products %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 box-shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="my-0 font-weight-normal text-truncate" style="max-width: 70%;">{{ product.name }}</h4>
+                <span class="badge bg-success small" style="font-size: 0.7rem;">Активен</span>
+            </div>
+            <div class="card-body d-flex flex-column">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" class="img-fluid mb-3" style="max-height: 150px; object-fit: contain;">
+                {% else %}
+                    <div class="bg-light mb-3 py-4 text-muted">Нет изображения</div>
+                {% endif %}
+                
+                <h1 class="card-title pricing-card-title">${{ product.price }}</h1>
+                
+                <p class="text-start text-muted">{{ product.description|truncatechars:103 }}</p>
+                <div class="text-start mb-3"><small class="text-muted">Владелец: {{ product.owner.email|default:"Система" }}</small></div>
+                
+                <div class="mt-auto d-flex flex-column gap-2">
+                    <a href="{% url 'catalog:product_detail' product.pk %}" class="btn btn-lg btn-block btn-outline-primary w-100">Подробнее</a>
+                    
+                    {% if product.owner == user or user.is_superuser or perms.catalog.can_unpublish_product %}
+                    <div class="btn-group w-100">
+                        <a href="{% url 'catalog:product_update' product.pk %}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
+                        {% if product.owner == user or user.is_superuser or perms.catalog.delete_product %}
+                            <a href="{% url 'catalog:product_delete' product.pk %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <p class="alert alert-info">В этой категории пока нет опубликованных продуктов.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

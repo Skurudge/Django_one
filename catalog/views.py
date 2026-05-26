@@ -1,10 +1,15 @@
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.db import models  # Добавили импорт для работы с models.Q
+
 from catalog.models import Product, Category
 from catalog.forms import ProductForm
+from catalog.services import get_products_by_category
 
 
 class ProductListView(ListView):
@@ -19,20 +24,19 @@ class ProductListView(ListView):
         queryset = super().get_queryset()
         user = self.request.user
 
-        # Если пользователь — суперпользователь или модератор, показываем все товары
         if user.is_authenticated and (user.is_superuser or user.groups.filter(name="Модератор продуктов").exists()):
             return queryset
 
-        # Обычные авторизованные пользователи видят опубликованные товары И свои собственные
         if user.is_authenticated:
             return queryset.filter(models.Q(is_published=True) | models.Q(owner=user))
 
-        # Анонимные пользователи видят только опубликованные товары
         return queryset.filter(is_published=True)
 
 
+# Задание 2: Кэширование страницы одного продукта на 15 минут (900 секунд)
+@method_decorator(cache_page(900), name="dispatch")
 class ProductDetailView(LoginRequiredMixin, DetailView):
-    """CBV для детальной страницы товара с защитой доступа."""
+    """CBV для детальной страницы товара с защитой доступа и кэшированием."""
     model = Product
     template_name = "product_detail.html"
     context_object_name = "product"
@@ -49,6 +53,24 @@ class ProductDetailView(LoginRequiredMixin, DetailView):
             return obj
 
         raise Http404("Товар находится на модерации и недоступен для просмотра.")
+
+
+class CategoryProductListView(ListView):
+    """Задание 3: Представление для отображения продуктов в конкретной категории."""
+    model = Product
+    template_name = "category_products.html"
+    context_object_name = "products"
+
+    def get_queryset(self):
+        """Получаем список продуктов из сервисной функции (с низкоуровневым кэшированием)."""
+        self.category = get_object_or_404(Category, pk=self.kwargs.get("pk"))
+        return get_products_by_category(self.category.pk)
+
+    def get_context_data(self, **kwargs):
+        """Добавляем категорию в контекст для отображения заголовка."""
+        context = super().get_context_data(**kwargs)
+        context["category"] = self.category
+        return context
 
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
@@ -71,7 +93,7 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
         product = form.save(commit=False)
         product.created_at = date.today()
         product.updated_at = date.today()
-        product.owner = self.request.user  # Привязка владельца согласно ТЗ
+        product.owner = self.request.user
         product.save()
         return super().form_valid(form)
 
@@ -116,7 +138,7 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy("catalog:home")
 
     def get_object(self, queryset=None):
-        """Удалять продукты может создатель или модератор согласно критериям оценки."""
+        """Удалять продукты может создатель или модератор."""
         obj = super().get_object(queryset)
         user = self.request.user
 

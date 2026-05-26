@@ -12,7 +12,7 @@
         <a class="p-2 btn btn-outline-primary text-primary" href="{% url 'catalog:my_contact' %}">Контакты</a>
     </nav>
 
-    <!-- Блок авторизации в правой части меню -->
+    <!-- Блок авторизации -->
     <div class="ms-auto d-flex align-items-center gap-3">
         {% if user.is_authenticated %}
             <span class="text-muted small">Вы вошли как: <strong>{{ user.email }}</strong></span>
