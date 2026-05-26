@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Category(models.Model):
@@ -33,6 +34,17 @@ class Product(models.Model):
     created_at = models.DateField(verbose_name="Дата создания")
     updated_at = models.DateField(verbose_name="Дата последнего изменения")
 
+    # Новые поля для Задания 1 и Задания 2
+    is_published = models.BooleanField(default=False, verbose_name="Признак публикации")
+    owner = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name="Владелец",
+        related_name="products"
+    )
+
     def __str__(self):
         return f"продукт '{self.name}' из категории '{self.category}'"
 
@@ -40,3 +52,8 @@ class Product(models.Model):
         verbose_name = "продукт"
         verbose_name_plural = "продукты"
         ordering = ["category", "name"]
+
+        # Кастомные права доступа согласно ТЗ Задания 1
+        permissions = [
+            ("can_unpublish_product", "Can unpublish product"),
+        ]

@@ -1,12 +1,13 @@
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.mail import send_mail
 from django.conf import settings
 from blog.models import BlogPost
 
 
 class BlogPostListView(ListView):
-    """CBV для вывода списка статей блога."""
+    """CBV для вывода списка статей блога (доступно всем)."""
     model = BlogPost
     template_name = "blog/blogpost_list.html"
     context_object_name = "posts"
@@ -18,7 +19,7 @@ class BlogPostListView(ListView):
 
 
 class BlogPostDetailView(DetailView):
-    """CBV для отображения отдельной статьи блога."""
+    """CBV для отображения отдельной статьи блога (доступно всем)."""
     model = BlogPost
     template_name = "blog/blogpost_detail.html"
     context_object_name = "post"
@@ -29,7 +30,7 @@ class BlogPostDetailView(DetailView):
         obj.views_count += 1
         obj.save()
 
-        # Дополнительное задание: отправка поздравления при 100 просмотрах
+        # Отправка поздравления при 100 просмотрах
         if obj.views_count == 100:
             send_mail(
                 subject="Поздравляем с достижением!",
@@ -42,27 +43,30 @@ class BlogPostDetailView(DetailView):
         return obj
 
 
-class BlogPostCreateView(CreateView):
-    """CBV для создания новой статьи."""
+class BlogPostCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    """CBV для создания новой статьи (только для Контент-менеджеров)."""
     model = BlogPost
     fields = ["title", "content", "image", "is_published"]
     template_name = "blog/blogpost_form.html"
     success_url = reverse_lazy("blog:list")
+    # Проверка системного разрешения на добавление записи блога
+    permission_required = "blog.add_blogpost"
 
 
-class BlogPostUpdateView(UpdateView):
-    """CBV для редактирования существующей статьи."""
+class BlogPostUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    """CBV для редактирования существующей статьи (только для Контент-менеджеров)."""
     model = BlogPost
     fields = ["title", "content", "image", "is_published"]
     template_name = "blog/blogpost_form.html"
+    permission_required = "blog.change_blogpost"
 
     def get_success_url(self):
-        """Перенаправление на страницу этой же статьи после её редактирования."""
         return reverse("blog:detail", kwargs={"pk": self.object.pk})
 
 
-class BlogPostDeleteView(DeleteView):
-    """CBV для удаления статьи."""
+class BlogPostDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    """CBV для удаления статьи (только для Контент-менеджеров)."""
     model = BlogPost
     template_name = "blog/blogpost_confirm_delete.html"
     success_url = reverse_lazy("blog:list")
+    permission_required = "blog.delete_blogpost"
