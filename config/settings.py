@@ -16,12 +16,12 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",  # Оставили только один раз
+    "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "catalog",
     "blog",
-    "users",  # Зарегистрировали новое приложение пользователей
+    "users",
 ]
 
 MIDDLEWARE = [
@@ -64,7 +64,18 @@ DATABASES = {
     }
 }
 
-# Указываем Django использовать нашу кастомную модель пользователя
+# Настройка кэширования через Redis (Задание 1)
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv("REDIS_LOCATION", "redis://127.0.0.1:6379/1"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Использование кастомной модели пользователя
 AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -98,11 +109,9 @@ MEDIA_URL = "/media/"
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
-# Настройки отправки почты (для приветственного письма при регистрации)
+# Консольный почтовый бэкенд для отладки писем
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Перенаправление для LoginRequiredMixin на нашу кастомную страницу входа
+# Маршруты перенаправлений для авторизации
 LOGIN_URL = "users:login"
-
-# Куда перенаправлять пользователя после успешного входа на сайт
 LOGIN_REDIRECT_URL = "catalog:home"
